@@ -1,0 +1,79 @@
+pro readdimiicam,shot,time,signal,nt,nx,ny,errcode=errcode
+
+; find out where we are and set path to data accordingly
+
+spawn,'hostname -s',hostname
+hostname=hostname[0]
+case strmid(hostname,0,3) of
+    'Kar':    datapath='/Users/kak/Documents/DIM-II-IR/' ; e2mkaklap daheim
+    'vpn':    datapath='/Users/kak/Documents/DIM-II-IR/' ; e2mkaklap daheim
+    'e2m':    datapath='/Users/kak/Documents/DIM-II-IR/' ; e2mkakmac
+    'tok':    datapath='/ptmp1/work/kak/DIM-II-IR/'      ; tokx0y
+    else:     datapath='/afs/ipp/u/augd/rawfiles/TDR/Schmelzexperiment_Krieger/'
+endcase
+print,"Reading file from directory "+datapath
+
+filename=datapath+strtrim(string(shot),1)+'.dat'
+
+; open file
+
+openr,lu,filename,error=errcode,/get_lun,/swap_if_big_endian
+if errcode ne 0 then begin
+  message,!ERROR_STATE.MSG,/informational
+  return
+endif
+
+; nt:    number of camera image frames
+; nx,ny: size of image frames
+
+nt=ulong(0)
+nx=ulong(0)
+ny=ulong(0)
+
+; time: vector of acquisition times for each camera frame
+
+readu,lu,nt
+time=dblarr(nt)
+
+; signal: array of camera frames 
+readu,lu,time
+readu,lu,nt
+readu,lu,nx
+readu,lu,ny
+signal=uintarr(ny,nx,nt)
+readu,lu,signal
+
+free_lun,lu
+
+case shot of
+    33945: tlag=0.021250666
+    33946: tlag=0.020700649
+    33947: tlag=0.021250669
+    33948: tlag=0.020400640
+    33950: tlag=0.020400617
+    34500: tlag=0.021000667
+    34501: tlag=0.020000919
+    34504: tlag=0.020500652
+    34506: tlag=0.020500651
+    34992: tlag=0.020000626
+    34993: tlag=0.020000630
+    34994: tlag=0.020000631
+    34995: tlag=0.020000630
+    else: begin
+           tlag=0.0
+           message,"Time base not yet synchronised to TS06 for this discharge",/informational
+          end
+endcase
+
+; correct time points for old files not synchronized to AUG TS06 discharge start trigger
+
+time+=tlag
+
+; convert to signed integer format
+
+nx=long(nx)
+ny=long(ny)
+nt=long(nt)
+signal=long(signal)
+
+end
