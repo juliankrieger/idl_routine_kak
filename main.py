@@ -4,7 +4,7 @@ import numpy as np
 ULONG_MASK = 0xffffffff # Use to manually unsign an integer
 
 def read_ulong(datastream):
-    #Read Little Endian Long from datastream
+    #Read Little Endian unsigned Long from datastream
     date, = struct.unpack("<L", datastream.read(4))
     return date
 
